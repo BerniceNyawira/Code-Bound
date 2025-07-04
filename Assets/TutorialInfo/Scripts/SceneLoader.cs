@@ -3,25 +3,37 @@ using UnityEngine.SceneManagement;
 
 public class SceneLoader : MonoBehaviour
 {
-    // Loads the Rules screen
+    // Load the Rules screen
     public void LoadRules()
     {
-        SceneManager.LoadScene("Rules"); // Change this to the actual name of your Rules scene
+        SceneManager.LoadScene("Rules");
     }
 
-    // Loads Level 1 (your game start)
-    public void LoadLevelOne()
+    // General method to load any level and remember it
+    public void LoadLevel(string levelName)
     {
-        SceneManager.LoadScene("level 1"); // Make sure this matches the name in Build Settings
+        SceneManager.LoadScene(levelName);
+        PlayerPrefs.SetString("LastPlayedLevel", levelName);
     }
+
+    // Retry the last played level
+    public void RetryLevel()
+    {
+        string lastLevel = PlayerPrefs.GetString("LastPlayedLevel", "level 1");
+        Debug.Log("Retrying level: " + lastLevel);
+        SceneManager.LoadScene(lastLevel);
+    }
+
+    // Go back to Main Menu
     public void LoadMainMenu()
     {
-        SceneManager.LoadScene("MainMenu"); // Change this to your actual Main Menu scene name
+        SceneManager.LoadScene("MainMenu");
     }
-    // Quits the game (won't work in Editor, only in build)
+
+    // Quit the game
     public void QuitGame()
     {
         Application.Quit();
-        Debug.Log("Game Quit!"); // So you see something when testing in Editor
+        Debug.Log("Game Quit");
     }
 }
