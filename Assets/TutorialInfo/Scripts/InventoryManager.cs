@@ -7,21 +7,20 @@ public class InventoryManager : MonoBehaviour
     public static InventoryManager Instance;
 
     private List<string> collectedItems = new List<string>();
-    public Text inventoryText; // 🎯 Drag your UI Text here
-    public int totalPartsRequired = 2; // Set this in Inspector
+    public Text inventoryText; // 🎯 Optional: Drag your UI Text here
+    public int totalPartsRequired = 2;
 
     private bool isInventoryVisible = false;
+
+    public delegate void AllPartsCollectedEvent();
+    public static event AllPartsCollectedEvent OnAllPartsCollected;
 
     void Awake()
     {
         if (Instance == null)
-        {
             Instance = this;
-        }
         else
-        {
             Destroy(gameObject);
-        }
     }
 
     public void AddItem(string itemName)
@@ -30,9 +29,7 @@ public class InventoryManager : MonoBehaviour
         Debug.Log("Collected: " + itemName);
 
         if (isInventoryVisible && inventoryText != null)
-        {
             UpdateInventoryText();
-        }
 
         CheckIfAllCollected();
     }
@@ -44,11 +41,8 @@ public class InventoryManager : MonoBehaviour
         if (inventoryText != null)
         {
             inventoryText.gameObject.SetActive(isInventoryVisible);
-
             if (isInventoryVisible)
-            {
                 UpdateInventoryText();
-            }
         }
     }
 
@@ -65,11 +59,8 @@ public class InventoryManager : MonoBehaviour
     {
         if (collectedItems.Count >= totalPartsRequired)
         {
-            Debug.Log("✅ All parts collected! Opening door...");
-            if (ExitDoorManager.Instance != null)
-            {
-                ExitDoorManager.Instance.ActivateExit();
-            }
+            Debug.Log("✅ All parts collected!");
+            OnAllPartsCollected?.Invoke(); // Broadcast to any listener
         }
     }
 
