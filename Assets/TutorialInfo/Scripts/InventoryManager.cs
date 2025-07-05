@@ -15,13 +15,11 @@ public class InventoryManager : MonoBehaviour
     public delegate void AllPartsCollectedEvent();
     public static event AllPartsCollectedEvent OnAllPartsCollected;
 
-    void Awake()
-    {
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
-    }
+    void Start()
+{
+    inventoryText.gameObject.SetActive(true); // always visible
+    UpdateInventoryText();
+}
 
     public void AddItem(string itemName)
     {
