@@ -8,6 +8,7 @@ public class InventoryManager : MonoBehaviour
 
     private List<string> collectedItems = new List<string>();
     public Text inventoryText; // 🎯 Drag your UI Text here
+    public int totalPartsRequired = 2; // Set this in Inspector
 
     private bool isInventoryVisible = false;
 
@@ -28,11 +29,12 @@ public class InventoryManager : MonoBehaviour
         collectedItems.Add(itemName);
         Debug.Log("Collected: " + itemName);
 
-        // Optional: auto-update inventory UI if it's already open
         if (isInventoryVisible && inventoryText != null)
         {
             UpdateInventoryText();
         }
+
+        CheckIfAllCollected();
     }
 
     public void ToggleInventory()
@@ -56,6 +58,18 @@ public class InventoryManager : MonoBehaviour
         foreach (string item in collectedItems)
         {
             inventoryText.text += "- " + item + "\n";
+        }
+    }
+
+    private void CheckIfAllCollected()
+    {
+        if (collectedItems.Count >= totalPartsRequired)
+        {
+            Debug.Log("✅ All parts collected! Opening door...");
+            if (ExitDoorManager.Instance != null)
+            {
+                ExitDoorManager.Instance.ActivateExit();
+            }
         }
     }
 

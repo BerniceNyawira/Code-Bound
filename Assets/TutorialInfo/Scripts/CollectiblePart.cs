@@ -5,7 +5,10 @@ public class CollectiblePart : MonoBehaviour
     public AudioClip pickupSound;
     public GameObject glowEffect;
 
-    void OnTriggerEnter(Collider other)
+   void OnTriggerEnter(Collider other)
+{
+    Debug.Log("Something entered the trigger: " + other.name);
+
     {
         if (other.CompareTag("Player"))
         {
@@ -29,5 +32,6 @@ public class CollectiblePart : MonoBehaviour
             Destroy(gameObject);
         }
     }
+}
 }
 
