@@ -1,12 +1,13 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class FloatingHealth : MonoBehaviour
 {
     public GameObject[] hearts; // Heart models in the scene
     public int currentHealth;
     public GameObject heartPopPrefab;
-
+    private bool isInvincible = false;
     private PlayerMovement playerMovement;
 
     void Start()
@@ -15,25 +16,24 @@ public class FloatingHealth : MonoBehaviour
         currentHealth = hearts.Length;
     }
 
-    public void TakeDamage()
-    {
-        Debug.Log("Player took damage");
+    
+public void TakeDamage()
+{
+    if (isInvincible || currentHealth <= 0) return;
 
-        currentHealth--;
-        currentHealth = Mathf.Max(currentHealth, 0);
-        UpdateHearts();
+    isInvincible = true;
+    currentHealth--;
+    UpdateHearts();
+    StartCoroutine(DamageCooldown());
 
-        if (currentHealth == 0)
-        {
-            if (playerMovement != null)
-            {
-                playerMovement.PlayDieAnimation();
-            }
+    if (currentHealth <= 0) StartCoroutine(DelayedGameOver());
+}
 
-            Debug.Log("No hearts left — Game Over!");
-            StartCoroutine(DelayedGameOver()); // ✅ delay scene change
-        }
-    }
+IEnumerator DamageCooldown()
+{
+    yield return new WaitForSeconds(2f); // 2 second immunity
+    isInvincible = false;
+}
 
     void UpdateHearts()
     {
