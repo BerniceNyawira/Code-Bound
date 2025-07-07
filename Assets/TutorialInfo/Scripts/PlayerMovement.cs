@@ -2,12 +2,13 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float moveSpeed = 5f;
+    public float moveSpeed = 10f;
     public float rotationSpeed = 10f;
 
     private Rigidbody rb;
     private Animator anim;
     private Vector3 movement;
+    private Vector3 lastDirection = Vector3.forward; // default face forward (Z+)
 
     void Start()
     {
@@ -20,18 +21,21 @@ public class PlayerMovement : MonoBehaviour
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveZ = Input.GetAxisRaw("Vertical");
 
-        // World-based input
         movement = new Vector3(moveX, 0f, moveZ).normalized;
 
-        // Only rotate if moving
+        // Update lastDirection if moving
         if (movement != Vector3.zero)
         {
-            Quaternion toRotation = Quaternion.LookRotation(movement, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, rotationSpeed * Time.deltaTime);
+            lastDirection = movement;
         }
+
+        // Always rotate toward the last direction
+        Quaternion toRotation = Quaternion.LookRotation(lastDirection, Vector3.up);
+        transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, rotationSpeed * Time.deltaTime);
 
         // Animation
         anim.SetBool("isRunning", movement.magnitude > 0.1f);
+        Debug.Log("TimeScale: " + Time.timeScale);
     }
 
     void FixedUpdate()

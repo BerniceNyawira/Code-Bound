@@ -9,25 +9,25 @@ public class ExitPortalSpawner : MonoBehaviour
 
   void Update()
 {
-    if (!spawned && InventoryManager.Instance.GetCollectedItems().Count >= totalPartsRequired)
-    {
-        Vector3 playerPos = GameObject.FindGameObjectWithTag("Player").transform.position;
-        Vector3 playerForward = GameObject.FindGameObjectWithTag("Player").transform.forward;
+if (!spawned && InventoryManager.Instance.GetCollectedItems().Count >= totalPartsRequired)
+{
+    GameObject player = GameObject.FindGameObjectWithTag("Player");
+    Vector3 playerPos = player.transform.position;
+    Vector3 playerForward = player.transform.forward;
 
-        // 🧭 Spawn it 6 units *in front* and 2 units *up*
-        Vector3 spawnPos = playerPos + playerForward * 6f + Vector3.up * 2f;
+    // 📍 Spawn in front + a little above
+    Vector3 spawnPos = playerPos + playerForward * 6f + Vector3.up * 3f;
 
-        // 🎯 Make it face the player
-        Vector3 directionToPlayer = playerPos - spawnPos;
-        Quaternion facePlayerRotation = Quaternion.LookRotation(directionToPlayer);
+    // 🎯 Make portal face player + stand upright
+    Vector3 directionToPlayer = playerPos - spawnPos;
+    Quaternion facePlayer = Quaternion.LookRotation(directionToPlayer, Vector3.up);
+    Quaternion spawnRotation = Quaternion.Euler(90f, 90f, 90f);
 
-        // 🔄 Rotate upright
-        Quaternion uprightFix = Quaternion.Euler(-90f, 0f, 0f);
-        Quaternion spawnRotation = facePlayerRotation * uprightFix;
+    Instantiate(exitPrefab, spawnPos, spawnRotation);
+    spawned = true;
+}
 
-        Instantiate(exitPrefab, spawnPos, spawnRotation);
-        spawned = true;
-    }
+
 }
 
     Vector3 FindSpawnPosition()

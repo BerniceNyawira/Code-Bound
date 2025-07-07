@@ -3,10 +3,10 @@ using UnityEngine;
 public class MazeCameraFollow : MonoBehaviour
 {
     public Transform target; // Player
-    public Vector3 offset = new Vector3(0, 6, -6); // Position above & behind
+    public Vector3 offset = new Vector3(0, 10, -8); // Position above & behind
     public float followSpeed = 5f; // Faster catch-up
     public float rotationSpeed = 4f;
-    public float tiltAngle = 25f;
+    public float tiltAngle = 10f;
 
     void LateUpdate()
     {
