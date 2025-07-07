@@ -1,26 +1,58 @@
 using UnityEngine;
-using TMPro;
 
+[RequireComponent(typeof(Collider))]
 public class StandTrigger : MonoBehaviour
 {
-    public TextMeshProUGUI instructionText;
-    public GameObject combineButton;
+    [Header("References")]
+    public ComponentCombiner combiner;
+    public GameObject interactionPrompt; // "Press E to interact" text
+    public float interactionRadius = 2f;
 
-    private bool hasTriggered = false;
+    private bool playerInRange;
 
-    void Start()
+    private void Start()
     {
-        instructionText.text = "Find the stand to begin combining...";
-        combineButton.SetActive(false);
+        GetComponent<Collider>().isTrigger = true;
+        if (interactionPrompt != null) interactionPrompt.SetActive(false);
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void Update()
     {
-        if (!hasTriggered && other.CompareTag("Player"))
+        if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
-            hasTriggered = true;
-            instructionText.text = "Press Combine to start building...";
-            combineButton.SetActive(true);
+            combiner.StartCombination();
+            if (interactionPrompt != null) interactionPrompt.SetActive(false);
         }
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (IsPlayer(other))
+        {
+            playerInRange = true;
+            if (interactionPrompt != null) interactionPrompt.SetActive(true);
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (IsPlayer(other))
+        {
+            playerInRange = false;
+            if (interactionPrompt != null) interactionPrompt.SetActive(false);
+        }
+    }
+
+    bool IsPlayer(Collider col)
+    {
+        return col.CompareTag("Player") || 
+               col.GetComponent<CharacterController>() != null;
+    }
+
+    // Visualize interaction radius in editor
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, interactionRadius);
     }
 }

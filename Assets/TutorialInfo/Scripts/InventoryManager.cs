@@ -7,9 +7,8 @@ public class InventoryManager : MonoBehaviour
     public static InventoryManager Instance;
 
     private List<string> collectedItems = new List<string>();
-    public Text inventoryText; // 🎯 Optional UI Text
+    public Text inventoryText; // Optional UI text
     public int totalPartsRequired = 2;
-
     private bool isInventoryVisible = false;
 
     public delegate void AllPartsCollectedEvent();
@@ -23,16 +22,23 @@ public class InventoryManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    public List<string> GetCollectedItems()
+    {
+        return new List<string>(collectedItems); // Return a copy
+    }
 
     public void AddItem(string itemName)
     {
-        collectedItems.Add(itemName);
-        Debug.Log("Collected: " + itemName);
+        if (!collectedItems.Contains(itemName))
+        {
+            collectedItems.Add(itemName);
+            Debug.Log("Collected: " + itemName);
 
-        if (isInventoryVisible && inventoryText != null)
-            UpdateInventoryText();
+            if (isInventoryVisible && inventoryText != null)
+                UpdateInventoryText();
 
-        CheckIfAllCollected();
+            CheckIfAllCollected();
+        }
     }
 
     public void ToggleInventory()
@@ -63,12 +69,24 @@ public class InventoryManager : MonoBehaviour
         if (collectedItems.Count >= totalPartsRequired)
         {
             Debug.Log("✅ All parts collected!");
-            OnAllPartsCollected?.Invoke(); // Broadcast event
+            OnAllPartsCollected?.Invoke();
+            ShowLevelCompletedUI();
         }
     }
 
-    public List<string> GetCollectedItems()
+    private void ShowLevelCompletedUI()
+{
+    LevelCompletedUI levelCompletedUI = FindAnyObjectByType<LevelCompletedUI>(FindObjectsInactive.Include);
+    if (levelCompletedUI != null)
     {
-        return collectedItems;
+        levelCompletedUI.gameObject.SetActive(true);
+    }
+    else
+    {
+        Debug.LogWarning("⚠ LevelCompletedUI not found in scene!");
     }
 }
+
+}
+
+// Note: Ensure that the LevelCompletedUI script is set up to handle the event from InventoryManager.

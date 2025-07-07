@@ -1,39 +1,58 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 public class SceneLoader : MonoBehaviour
 {
-    // Load the Rules screen
-    public void LoadRules()
+    void Awake()
     {
-        SceneManager.LoadScene("Rules");
+        // Singleton pattern
+        int numSceneLoaders = FindObjectsByType<SceneLoader>(FindObjectsSortMode.None).Length;
+        if (numSceneLoaders > 1)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            DontDestroyOnLoad(gameObject);
+        }
     }
 
-    // General method to load any level and remember it
+    // Load specific levels
+    public void LoadLevel1() => LoadLevel("1");
+    public void LoadLevel2() => LoadLevel("2"); 
+    public void LoadLevel3() => LoadLevel("3");
+    public void LoadLevel4() => LoadLevel("4");
+
+    // ✅ Load CodeBase scene on button click
+    public void LoadCodeBase() => LoadLevel("CodeBase");
+
+    // Base level loading method
     public void LoadLevel(string levelName)
     {
-        SceneManager.LoadScene(levelName);
-        PlayerPrefs.SetString("LastPlayedLevel", levelName);
+        if (Application.CanStreamedLevelBeLoaded(levelName))
+        {
+            SceneManager.LoadScene(levelName);
+            PlayerPrefs.SetString("LastPlayedLevel", levelName);
+            Debug.Log("Loading: " + levelName);
+        }
+        else
+        {
+            Debug.LogError($"Scene '{levelName}' not found in build settings!");
+            LoadMainMenu();
+        }
     }
 
     // Retry the last played level
     public void RetryLevel()
     {
-        string lastLevel = PlayerPrefs.GetString("LastPlayedLevel", "level 1");
-        Debug.Log("Retrying level: " + lastLevel);
-        SceneManager.LoadScene(lastLevel);
+        string lastLevel = PlayerPrefs.GetString("LastPlayedLevel", "Level 1");
+        Debug.Log("Retrying: " + lastLevel);
+        LoadLevel(lastLevel);
     }
 
-    // Go back to Main Menu
-    public void LoadMainMenu()
-    {
-        SceneManager.LoadScene("MainMenu");
-    }
-
-    // Quit the game
-    public void QuitGame()
-    {
-        Application.Quit();
-        Debug.Log("Game Quit");
-    }
+    // Navigation
+    public void LoadRules() => SceneManager.LoadScene("Rules");
+    public void LoadMainMenu() => SceneManager.LoadScene("MainMenu");
+    public void QuitGame() => Application.Quit();
 }

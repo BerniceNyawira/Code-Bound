@@ -1,65 +1,87 @@
-using System.Collections;
+using System.Collections; // ADD THIS LINE TO FIX THE ERROR
 using UnityEngine;
-using UnityEngine.UI; // Needed for the Image type
+using UnityEngine.UI;
+using TMPro;
 
 public class ComponentCombiner : MonoBehaviour
 {
-    public GameObject[] partsToReveal; // Assign 9 parts in order
-    public GameObject fullComputer; // Assign the final computer model
-    public GameObject retrieveCodeButton; // Assign the button (set inactive by default)
-    public GameObject popEffectPrefab; // Assign particle effect prefab
-    public AudioSource computerAppearSound; // Sound when full computer appears
-    public Image screenFlash; // UI Image used for screen flash
-    public GameObject instructionTextObject; // TextMeshPro GameObject
-    public GameObject combineButtonObject;   // Combine Button
+    [Header("Part Animation")]
+    public GameObject[] partsToReveal;
+    public GameObject fullComputer;
+    public GameObject popEffectPrefab;
+    public AudioSource computerAppearSound;
+    public Image screenFlash;
 
+    [Header("UI Elements")]
+    public GameObject instructionTextObject;
+    public GameObject combineButtonObject;
+    public GameObject retrieveBUButton;
+    public TMP_Text completionText;
 
-  public void StartCombination()
-{
-    // Hide text and button when starting
-    if (instructionTextObject != null)
-        instructionTextObject.SetActive(false);
+    [Header("Timing")]
+    public float partRevealDelay = 2f;
+    public float preCombineDelay = 1f;
+    public float postCombineDelay = 1f;
 
-    if (combineButtonObject != null)
-        combineButtonObject.SetActive(false);
+    private void Start()
+    {
+        retrieveBUButton.SetActive(false);
+        fullComputer.SetActive(false);
+        
+        foreach (GameObject part in partsToReveal)
+        {
+            part.SetActive(false);
+        }
+    }
 
-    StartCoroutine(RevealSequence());
-}
+    public void StartCombination()
+    {
+        if (instructionTextObject != null)
+            instructionTextObject.SetActive(false);
 
+        if (combineButtonObject != null)
+            combineButtonObject.SetActive(false);
+
+        StartCoroutine(RevealSequence());
+    }
 
     IEnumerator RevealSequence()
     {
-        // Reveal each part slowly
+        // Phase 1: Reveal parts
         foreach (GameObject part in partsToReveal)
         {
             part.SetActive(true);
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(partRevealDelay);
         }
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(preCombineDelay);
 
-        // Flash the screen
+        // Phase 2: Combine animation
         StartCoroutine(FlashScreen());
 
-        // Play pop + hide each part
         foreach (GameObject part in partsToReveal)
         {
             if (popEffectPrefab != null)
                 Instantiate(popEffectPrefab, part.transform.position, Quaternion.identity);
-
+            
             part.SetActive(false);
+            yield return new WaitForSeconds(0.1f);
         }
 
-        // Show full computer
+        // Phase 3: Final reveal
         fullComputer.SetActive(true);
-
+        
         if (computerAppearSound != null)
             computerAppearSound.Play();
 
-        yield return new WaitForSeconds(1f);
+        if (completionText != null)
+        {
+            completionText.text = "COMPUTER ASSEMBLED!";
+            completionText.gameObject.SetActive(true);
+        }
 
-        // Show retrieve code button
-        retrieveCodeButton.SetActive(true);
+        yield return new WaitForSeconds(postCombineDelay);
+        retrieveBUButton.SetActive(true);
     }
 
     IEnumerator FlashScreen()
@@ -67,13 +89,11 @@ public class ComponentCombiner : MonoBehaviour
         if (screenFlash == null) yield break;
 
         Color c = screenFlash.color;
-
-        // Flash in
         c.a = 1;
         screenFlash.color = c;
+        
         yield return new WaitForSeconds(0.1f);
-
-        // Fade out
+        
         while (c.a > 0)
         {
             c.a -= Time.deltaTime * 2f;
