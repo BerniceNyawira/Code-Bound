@@ -19,7 +19,7 @@ public class AdvancedTerminalTypewriter : MonoBehaviour
     
     [Header("Error System")]
     [SerializeField] private float errorProbability = 0.02f;
-    [SerializeField] private List<ErrorProfile> errorProfiles;
+    [SerializeField] private List<ErrorProfile> errorProfiles = new List<ErrorProfile>();
     [SerializeField] private Transform screenEffectsParent;
     
     [Header("Audio")]
@@ -77,9 +77,18 @@ public class AdvancedTerminalTypewriter : MonoBehaviour
             StartCoroutine(BlinkCursor());
         }
         
-        // Randomly corrupt some lines
-        CorruptRandomLines();
+        if (errorProfiles.Count == 0)
+        {
+            errorProfiles.Add(new ErrorProfile()
+            {
+                name = "Default Glitch",
+                glitchColor = Color.red,
+                glitchChars = "�#%&@$*",
+                errorDuration = 0.3f
+            });
+        }
         
+        CorruptRandomLines();
         typingCoroutine = StartCoroutine(TypeCode());
     }
 
@@ -87,23 +96,33 @@ public class AdvancedTerminalTypewriter : MonoBehaviour
     {
         for (int i = 0; i < modifiedCodeLines.Count; i++)
         {
-            if (!string.IsNullOrEmpty(modifiedCodeLines[i]) && Random.value < glitchLineProbability)
+            if (!string.IsNullOrEmpty(modifiedCodeLines[i]) && errorProfiles.Count > 0)
             {
-                modifiedCodeLines[i] = ApplyErrorProfile(modifiedCodeLines[i], 
-                    errorProfiles[Random.Range(0, errorProfiles.Count)]);
+                if (Random.value < glitchLineProbability)
+                {
+                    modifiedCodeLines[i] = ApplyErrorProfile(
+                        modifiedCodeLines[i], 
+                        errorProfiles[Random.Range(0, errorProfiles.Count)]
+                    );
+                }
             }
         }
     }
 
     string ApplyErrorProfile(string original, ErrorProfile profile)
     {
-        int errorsToAdd = Random.Range(1, original.Length / 4);
+        if (string.IsNullOrEmpty(original)) return original;
+        
+        int errorsToAdd = Mathf.Clamp(Random.Range(1, original.Length / 4), 1, original.Length);
         char[] corrupted = original.ToCharArray();
         
         for (int i = 0; i < errorsToAdd; i++)
         {
             int pos = Random.Range(0, corrupted.Length);
-            corrupted[pos] = profile.glitchChars[Random.Range(0, profile.glitchChars.Length)];
+            if (profile.glitchChars.Length > 0)
+            {
+                corrupted[pos] = profile.glitchChars[Random.Range(0, profile.glitchChars.Length)];
+            }
         }
         
         return $"<color=#{ColorUtility.ToHtmlStringRGBA(profile.glitchColor)}>{new string(corrupted)}</color>";
@@ -126,17 +145,15 @@ public class AdvancedTerminalTypewriter : MonoBehaviour
             
             for (int i = 0; i < line.Length; i++)
             {
-                // Random error effect
                 if (Random.value < errorProbability && errorProfiles.Count > 0)
                 {
                     ErrorProfile profile = errorProfiles[currentErrorProfileIndex];
                     yield return StartCoroutine(TriggerErrorEffect(profile));
                     
-                    // Cycle through error profiles
                     currentErrorProfileIndex = (currentErrorProfileIndex + 1) % errorProfiles.Count;
                 }
                 
-                terminalText.text += line[i];
+                terminalText.text += line[i].ToString();
                 UpdateCursorPosition();
                 
                 if (typingSound != null)
@@ -164,28 +181,27 @@ public class AdvancedTerminalTypewriter : MonoBehaviour
 
     IEnumerator TriggerErrorEffect(ErrorProfile profile)
     {
-        // Visual effect
         if (profile.visualEffectPrefab != null && screenEffectsParent != null)
         {
             GameObject effect = Instantiate(profile.visualEffectPrefab, screenEffectsParent);
             Destroy(effect, profile.errorDuration * 2);
         }
         
-        // Screen shake
         if (profile.screenShakeIntensity > 0)
         {
             StartCoroutine(ScreenShake(profile.errorDuration, profile.screenShakeIntensity));
         }
         
-        // Audio
         if (profile.errorSound != null)
         {
             audioSource.PlayOneShot(profile.errorSound);
         }
         
-        // Text distortion
-        string glitchChar = profile.glitchChars[Random.Range(0, profile.glitchChars.Length)].ToString();
-        terminalText.text += $"<color=#{ColorUtility.ToHtmlStringRGBA(profile.glitchColor)}>{glitchChar}</color>";
+        if (profile.glitchChars.Length > 0)
+        {
+            char glitchChar = profile.glitchChars[Random.Range(0, profile.glitchChars.Length)];
+            terminalText.text += $"<color=#{ColorUtility.ToHtmlStringRGBA(profile.glitchColor)}>{glitchChar.ToString()}</color>";
+        }
         
         yield return new WaitForSeconds(profile.errorDuration);
     }
@@ -273,7 +289,6 @@ public class AdvancedTerminalTypewriter : MonoBehaviour
     void OnRunButtonClicked()
     {
         Debug.Log("Terminal command executed!");
-        // Add your button functionality here
     }
 
     void OnDestroy()
