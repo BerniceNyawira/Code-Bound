@@ -12,22 +12,22 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
     [SerializeField] private float lineDelay = 0.1f;
     [SerializeField] private TMP_Text terminalText;
     [SerializeField] private float glitchLineProbability = 0.15f;
-    
+
     [Header("Cursor Settings")]
     [SerializeField] private RectTransform cursor;
     [SerializeField] private float cursorBlinkSpeed = 0.5f;
     [SerializeField] private Vector2 cursorOffset = new Vector2(10, 0);
-    
+
     [Header("Error System")]
     [SerializeField] private float errorProbability = 0.02f;
     [SerializeField] private List<ErrorProfile> errorProfiles = new List<ErrorProfile>();
     [SerializeField] private Transform screenEffectsParent;
-    
+
     [Header("Audio")]
     [SerializeField] private AudioClip typingSound;
     [SerializeField] private AudioClip lineCompleteSound;
     [SerializeField] private AudioSource audioSource;
-    
+
     [Header("Run Button")]
     [SerializeField] private Button runButton;
     [SerializeField] private float buttonFadeInTime = 1f;
@@ -87,44 +87,42 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
-            audioSource.playOnAwake = false;
         }
+
+        // Make sure it's enabled
+        audioSource.enabled = true;
+        gameObject.SetActive(true);
+        audioSource.playOnAwake = false;
     }
 
     void Start()
     {
-        // Prepare terminal
         modifiedCodeLines = new List<string>(originalCodeLines);
         terminalText.text = "";
 
-        // Run button hidden until type finishes
         if (runButton != null)
         {
             runButton.gameObject.SetActive(false);
             runButton.onClick.AddListener(OnRunButtonClicked);
         }
 
-        // Cursor setup
         if (cursor != null)
         {
             cursor.gameObject.SetActive(false);
             StartCoroutine(BlinkCursor());
         }
 
-        // Default error profile if empty
         if (errorProfiles.Count == 0)
         {
-            errorProfiles.Add(new ErrorProfile { name="Default", glitchColor=Color.red, glitchChars="�#%&@$*", errorDuration=0.3f });
+            errorProfiles.Add(new ErrorProfile { name = "Default", glitchColor = Color.red, glitchChars = "�#%&@$*", errorDuration = 0.3f });
         }
 
-        // Fade overlay setup
         if (fadeOverlay != null)
         {
-            fadeOverlay.color = new Color(0,0,0,0);
+            fadeOverlay.color = new Color(0, 0, 0, 0);
             fadeOverlay.gameObject.SetActive(false);
         }
 
-        // Start typewriter
         typingCoroutine = StartCoroutine(TypeCode());
     }
 
@@ -145,14 +143,14 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
     string ApplyErrorProfile(string original, ErrorProfile profile)
     {
         if (string.IsNullOrEmpty(original)) return original;
-        
-        int errorsToAdd = Mathf.Clamp(Random.Range(1, original.Length/4), 1, original.Length);
+
+        int errorsToAdd = Mathf.Clamp(Random.Range(1, original.Length / 4), 1, original.Length);
         char[] corrupted = original.ToCharArray();
         for (int e = 0; e < errorsToAdd; e++)
         {
             int pos = Random.Range(0, corrupted.Length);
             if (profile.glitchChars.Length > 0)
-                corrupted[pos] = profile.glitchChars[Random.Range(0,profile.glitchChars.Length)];
+                corrupted[pos] = profile.glitchChars[Random.Range(0, profile.glitchChars.Length)];
         }
         return $"<color=#{ColorUtility.ToHtmlStringRGBA(profile.glitchColor)}>{new string(corrupted)}</color>";
     }
@@ -161,60 +159,64 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
     {
         isTyping = true;
         CorruptRandomLines();
-        
+
         foreach (string line in modifiedCodeLines)
         {
             if (string.IsNullOrEmpty(line))
             {
                 terminalText.text += "\n\n";
-                yield return new WaitForSeconds(lineDelay*2);
+                yield return new WaitForSeconds(lineDelay * 2);
                 continue;
             }
-            
+
             terminalText.text += "\n";
-            for (int i=0; i<line.Length; i++)
+            for (int i = 0; i < line.Length; i++)
             {
-                if (Random.value < errorProbability && errorProfiles.Count>0)
+                if (Random.value < errorProbability && errorProfiles.Count > 0)
                 {
                     yield return StartCoroutine(TriggerErrorEffect(errorProfiles[currentErrorProfileIndex]));
-                    currentErrorProfileIndex = (currentErrorProfileIndex+1)%errorProfiles.Count;
+                    currentErrorProfileIndex = (currentErrorProfileIndex + 1) % errorProfiles.Count;
                 }
 
                 terminalText.text += line[i];
                 UpdateCursorPosition();
 
-                if (typingSound!=null)
+                if (typingSound != null && audioSource != null && audioSource.enabled && audioSource.gameObject.activeInHierarchy)
                 {
-                    audioSource.pitch = Random.Range(0.9f,1.1f);
+                    audioSource.pitch = Random.Range(0.9f, 1.1f);
                     audioSource.PlayOneShot(typingSound);
                 }
+
                 yield return new WaitForSeconds(charDelay);
             }
 
-            if (lineCompleteSound!=null)
+            if (lineCompleteSound != null && audioSource != null && audioSource.enabled && audioSource.gameObject.activeInHierarchy)
+            {
                 audioSource.PlayOneShot(lineCompleteSound);
+            }
 
             yield return new WaitForSeconds(lineDelay);
         }
 
         isTyping = false;
-        if (cursor!=null) cursor.gameObject.SetActive(false);
+        if (cursor != null) cursor.gameObject.SetActive(false);
         yield return StartCoroutine(ShowRunButton());
     }
 
     IEnumerator TriggerErrorEffect(ErrorProfile p)
     {
-        if (p.visualEffectPrefab!=null && screenEffectsParent!=null)
+        if (p.visualEffectPrefab != null && screenEffectsParent != null)
         {
             var fx = Instantiate(p.visualEffectPrefab, screenEffectsParent);
-            Destroy(fx, p.errorDuration*2);
+            Destroy(fx, p.errorDuration * 2);
         }
-        if (p.screenShakeIntensity>0) StartCoroutine(ScreenShake(p.errorDuration,p.screenShakeIntensity));
-        if (p.errorSound!=null) audioSource.PlayOneShot(p.errorSound);
+        if (p.screenShakeIntensity > 0) StartCoroutine(ScreenShake(p.errorDuration, p.screenShakeIntensity));
+        if (p.errorSound != null && audioSource != null && audioSource.enabled && audioSource.gameObject.activeInHierarchy)
+            audioSource.PlayOneShot(p.errorSound);
 
-        if (p.glitchChars.Length>0)
+        if (p.glitchChars.Length > 0)
         {
-            char gc = p.glitchChars[Random.Range(0,p.glitchChars.Length)];
+            char gc = p.glitchChars[Random.Range(0, p.glitchChars.Length)];
             terminalText.text += $"<color=#{ColorUtility.ToHtmlStringRGBA(p.glitchColor)}>{gc}</color>";
         }
 
@@ -224,15 +226,15 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
     IEnumerator ScreenShake(float duration, float intensity)
     {
         Vector3 orig = transform.position;
-        float t=0;
-        while(t<duration)
+        float t = 0;
+        while (t < duration)
         {
             transform.position = orig + new Vector3(
-                Random.Range(-1f,1f)*intensity,
-                Random.Range(-1f,1f)*intensity,
+                Random.Range(-1f, 1f) * intensity,
+                Random.Range(-1f, 1f) * intensity,
                 0
             );
-            t+=Time.deltaTime;
+            t += Time.deltaTime;
             yield return null;
         }
         transform.position = orig;
@@ -240,29 +242,29 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
 
     void UpdateCursorPosition()
     {
-        if (cursor==null || terminalText==null) return;
+        if (cursor == null || terminalText == null) return;
         terminalText.ForceMeshUpdate();
         Canvas.ForceUpdateCanvases();
-        int idx = terminalText.text.Length-1;
-        if(idx<0) return;
+        int idx = terminalText.text.Length - 1;
+        if (idx < 0) return;
         var ci = terminalText.textInfo.characterInfo[idx];
-        Vector3 br = new Vector3(ci.bottomRight.x, ci.baseLine,0);
+        Vector3 br = new Vector3(ci.bottomRight.x, ci.baseLine, 0);
         Vector3 world = terminalText.transform.TransformPoint(br);
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             terminalText.rectTransform.parent as RectTransform,
-            RectTransformUtility.WorldToScreenPoint(null,world),
+            RectTransformUtility.WorldToScreenPoint(null, world),
             null,
             out Vector2 local
         );
         cursor.anchoredPosition = local + cursorOffset;
-        if(!cursor.gameObject.activeSelf) cursor.gameObject.SetActive(true);
+        if (!cursor.gameObject.activeSelf) cursor.gameObject.SetActive(true);
     }
 
     IEnumerator BlinkCursor()
     {
-        while(true)
+        while (true)
         {
-            if(!isTyping && cursor!=null)
+            if (!isTyping && cursor != null)
                 cursor.gameObject.SetActive(!cursor.gameObject.activeSelf);
             yield return new WaitForSeconds(cursorBlinkSpeed);
         }
@@ -270,39 +272,35 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
 
     IEnumerator ShowRunButton()
     {
-        if (runButton==null) yield break;
+        if (runButton == null) yield break;
         runButton.gameObject.SetActive(true);
         var cg = runButton.GetComponent<CanvasGroup>() ?? runButton.gameObject.AddComponent<CanvasGroup>();
-        float t=0;
-        while(t<buttonFadeInTime)
+        float t = 0;
+        while (t < buttonFadeInTime)
         {
-            cg.alpha = Mathf.Lerp(0,1,t/buttonFadeInTime);
-            t+=Time.deltaTime;
+            cg.alpha = Mathf.Lerp(0, 1, t / buttonFadeInTime);
+            t += Time.deltaTime;
             yield return null;
         }
-        cg.alpha=1;
+        cg.alpha = 1;
     }
 
     private void OnRunButtonClicked()
     {
-        // start the transition coroutine
         StartCoroutine(TransitionToNextScene());
     }
 
     IEnumerator TransitionToNextScene()
     {
-        // disable the run button
-        if (runButton!=null) runButton.interactable = false;
+        if (runButton != null) runButton.interactable = false;
 
-        // choose fade or glitch
-        if (fadeOverlay!=null && glitchMaterial==null)
+        if (fadeOverlay != null && glitchMaterial == null)
             yield return StartCoroutine(FadeScreen());
-        else if (glitchMaterial!=null)
+        else if (glitchMaterial != null)
             yield return StartCoroutine(GlitchTransition());
         else
             yield return new WaitForSeconds(0.5f);
 
-        // finally load the next scene
         if (!string.IsNullOrEmpty(nextSceneName))
             SceneManager.LoadScene(nextSceneName);
         else
@@ -312,11 +310,11 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
     IEnumerator FadeScreen()
     {
         fadeOverlay.gameObject.SetActive(true);
-        float t=0;
-        while(t<fadeOutDuration)
+        float t = 0;
+        while (t < fadeOutDuration)
         {
-            fadeOverlay.color = Color.Lerp(new Color(0,0,0,0),Color.black,t/fadeOutDuration);
-            t+=Time.deltaTime;
+            fadeOverlay.color = Color.Lerp(new Color(0, 0, 0, 0), Color.black, t / fadeOutDuration);
+            t += Time.deltaTime;
             yield return null;
         }
         fadeOverlay.color = Color.black;
@@ -326,14 +324,14 @@ public class AdvancedTerminalWithTransition : MonoBehaviour
     {
         fadeOverlay.gameObject.SetActive(true);
         fadeOverlay.material = glitchMaterial;
-        float t=0;
-        while(t<glitchDuration)
+        float t = 0;
+        while (t < glitchDuration)
         {
-            float p = t/glitchDuration;
-            glitchMaterial.SetFloat("_GlitchIntensity",p);
-            glitchMaterial.SetFloat("_ScanLineJitter",p*0.5f);
-            fadeOverlay.color = new Color(0,0,0,p);
-            t+=Time.deltaTime;
+            float p = t / glitchDuration;
+            glitchMaterial.SetFloat("_GlitchIntensity", p);
+            glitchMaterial.SetFloat("_ScanLineJitter", p * 0.5f);
+            fadeOverlay.color = new Color(0, 0, 0, p);
+            t += Time.deltaTime;
             yield return null;
         }
         fadeOverlay.color = Color.black;
