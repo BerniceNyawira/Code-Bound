@@ -34,6 +34,20 @@ public class LevelCompletedUI : MonoBehaviour
 
     private void OnEnable()
     {
+        // Ensure audio source is ready
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+                audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.enabled = true;
+        audioSource.playOnAwake = false;
+
+        if (!audioSource.gameObject.activeInHierarchy)
+            audioSource.gameObject.SetActive(true);
+
         StartCoroutine(ShowCollectedItems());
     }
 
@@ -74,11 +88,12 @@ public class LevelCompletedUI : MonoBehaviour
     private IEnumerator TypeText(string text)
     {
         collectedText.text = "";
+
         foreach (char c in text)
         {
             collectedText.text += c;
 
-            if (audioSource != null && typingSound != null && audioSource.enabled)
+            if (audioSource != null && audioSource.enabled && audioSource.gameObject.activeInHierarchy && typingSound != null)
                 audioSource.PlayOneShot(typingSound);
 
             yield return new WaitForSeconds(typingSpeed);
@@ -89,7 +104,7 @@ public class LevelCompletedUI : MonoBehaviour
 
     private void PlayItemAppearEffects(Vector3 position)
     {
-        if (audioSource != null && itemAppearSound != null && audioSource.enabled)
+        if (audioSource != null && audioSource.enabled && audioSource.gameObject.activeInHierarchy && itemAppearSound != null)
             audioSource.PlayOneShot(itemAppearSound);
 
         if (itemAppearEffect != null)
