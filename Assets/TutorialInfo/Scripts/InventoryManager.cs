@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using TMPro;
 
 public class InventoryManager : MonoBehaviour
 {
@@ -10,9 +11,16 @@ public class InventoryManager : MonoBehaviour
     public Text inventoryText; // Optional UI text
     public int totalPartsRequired = 2;
     private bool isInventoryVisible = false;
+    public TextMeshProUGUI clueCounterText; // ← Drag your TMP or UI text here
+
 
     public delegate void AllPartsCollectedEvent();
     public static event AllPartsCollectedEvent OnAllPartsCollected;
+
+    void Start()
+    {
+        UpdateClueCounter();
+    }
 
     void Awake()
     {
@@ -27,12 +35,21 @@ public class InventoryManager : MonoBehaviour
         return new List<string>(collectedItems); // Return a copy
     }
 
+    private void UpdateClueCounter()
+{
+    if (clueCounterText != null)
+        clueCounterText.text = $"Parts Collected: {collectedItems.Count} / {totalPartsRequired}";
+}
+
+
     public void AddItem(string itemName)
     {
         if (!collectedItems.Contains(itemName))
         {
             collectedItems.Add(itemName);
             Debug.Log("Collected: " + itemName);
+
+            UpdateClueCounter();
 
             if (isInventoryVisible && inventoryText != null)
                 UpdateInventoryText();

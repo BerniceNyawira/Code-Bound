@@ -19,10 +19,10 @@ public class SceneLoader : MonoBehaviour
     }
 
     // Load specific levels
-    public void LoadLevel1() => LoadLevel("1");
-    public void LoadLevel2() => LoadLevel("2"); 
-    public void LoadLevel3() => LoadLevel("3");
-    public void LoadLevel4() => LoadLevel("4");
+    public void LoadLevel1() => LoadLevel("LevelOne");
+    public void LoadLevel2() => LoadLevel("LevelTwo"); 
+    public void LoadLevel3() => LoadLevel("LevelThree");
+    public void LoadLevel4() => LoadLevel("LevelFour");
 
     // ✅ Load CodeBase scene on button click
     public void LoadCodeBase() => LoadLevel("CodeBase");
